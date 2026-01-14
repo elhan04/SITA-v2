@@ -11,7 +11,7 @@ import { User, Student, TahfidzRecord, Attendance, Exam, Grade } from './types';
 //    - Copy URL '/exec' yang didapat, paste di bawah ini:
 // ---------------------------------------------------------------------------
 
-export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQAnWfkYjJslqyiwb2PeCVtcwvFFmSnpJxRkV_C1nwT0tQbw7m48vljS8p2NY1jxXb/exec"; 
+export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwh5sJq7bbV2C2JtX3XaFVJo1LhilSWBcPN6D06aTompKxMRkIrjh30FUrK8oM855xO/exec"; 
 // Contoh: "https://script.google.com/macros/s/AKfycbx.../exec"
 
 // Jika URL di atas kosong (""), aplikasi akan berjalan di Mode Offline (Data tidak tersimpan ke cloud).

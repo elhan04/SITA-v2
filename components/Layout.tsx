@@ -14,7 +14,8 @@ import {
   UserCheck,
   Database,
   FileText,
-  Settings
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -64,6 +65,8 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, activeTab, onTabChange,
       { id: 'attendance_student', label: 'Absensi Santri', icon: Users },
       { id: 'attendance_teacher', label: 'Absensi Guru', icon: UserCheck },
       { id: 'exam', label: 'Data Ujian', icon: Award },
+      { id: 'reports', label: 'Laporan', icon: FileText },
+      { id: 'tutorial', label: 'Panduan Sistem', icon: HelpCircle }, // Added Tutorial Link
       profileMenu
     ];
   };

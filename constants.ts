@@ -1,25 +1,32 @@
+
 import { User, Student, TahfidzRecord, Attendance, Exam, Grade } from './types';
 
-// CONFIGURATION
+// CONFIGURATION & TUTORIAL SETUP
 // ---------------------------------------------------------------------------
-// LANGKAH KRUSIAL AGAR APLIKASI ONLINE:
-// 1. Buka file 'backend_script.js', copy semua kodenya.
-// 2. Paste di Google Sheets > Ekstensi > Apps Script.
-// 3. Deploy sebagai Web App (Who has access: Anyone/Siapa Saja).
-// 4. Copy URL 'Web App URL' yang didapat.
-// 5. PASTE URL TERSEBUT DI BAWAH INI (Di dalam tanda kutip).
+// 1. SETUP DATABASE (GOOGLE SHEETS)
+//    - Buka file 'backend_script.js' di project ini, copy isinya.
+//    - Buat Google Sheet baru -> Ekstensi -> Apps Script.
+//    - Paste kode tadi, Save, lalu Deploy -> New Deployment.
+//    - Pilih Type: 'Web App', Who has access: 'Anyone' (PENTING!).
+//    - Copy URL '/exec' yang didapat, paste di bawah ini:
 // ---------------------------------------------------------------------------
 
-export const GOOGLE_SCRIPT_URL = ""; 
+export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQAnWfkYjJslqyiwb2PeCVtcwvFFmSnpJxRkV_C1nwT0tQbw7m48vljS8p2NY1jxXb/exec"; 
 // Contoh: "https://script.google.com/macros/s/AKfycbx.../exec"
 
 // Jika URL di atas kosong (""), aplikasi akan berjalan di Mode Offline (Data tidak tersimpan ke cloud).
 
-// WhatsApp Number for Admin (Format: 628xxxxxxxx) to receive permission requests
-export const ADMIN_PHONE = "6281234567890"; 
+// ---------------------------------------------------------------------------
+// 2. SETUP LOGO (LOGIN & DASHBOARD)
+//    - Cara A (File): Ganti file 'logo.png' di folder 'public/' dengan logo Anda.
+//    - Cara B (URL): Ganti nilai LOGO_URL di bawah ini dengan link gambar online.
+// ---------------------------------------------------------------------------
 
 // Replace this URL with your actual logo.png path if hosting locally, e.g., "/logo.png"
 export const LOGO_URL = "/logo.png";
+
+// WhatsApp Number for Admin (Format: 628xxxxxxxx) to receive permission requests
+export const ADMIN_PHONE = "6281234567890"; 
 
 export const SURAH_LIST = [
   "Al-Fatihah", "Al-Baqarah", "Ali 'Imran", "An-Nisa'", "Al-Ma'idah", 

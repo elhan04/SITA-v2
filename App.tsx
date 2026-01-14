@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, Role, Student, TahfidzRecord, Attendance, Exam } from './types';
 import { MOCK_USERS, MOCK_STUDENTS, MOCK_RECORDS, MOCK_ATTENDANCE, MOCK_EXAMS, LOGO_URL, GOOGLE_SCRIPT_URL } from './constants';
@@ -9,6 +10,7 @@ import ExamView from './components/ExamView';
 import AdminPanel from './components/AdminPanel';
 import ReportsView from './components/ReportsView';
 import ProfileSettings from './components/ProfileSettings';
+import TutorialGuide from './components/TutorialGuide';
 import { User as UserIcon, Lock, AlertCircle, ArrowRight, CheckCircle2, XCircle, Loader2, WifiOff, Database } from 'lucide-react';
 import { api } from './api';
 
@@ -344,7 +346,14 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': 
-        return <Dashboard user={user} students={students} records={records} exams={exams} connectionError={connectionError} />;
+        return <Dashboard 
+                  user={user} 
+                  students={students} 
+                  records={records} 
+                  exams={exams} 
+                  connectionError={connectionError}
+                  onNavigate={setActiveTab} // Pass navigation handler
+               />;
       
       case 'hafalan': 
         return <TahfidzLog user={user} students={students} records={records} onAddRecord={handleAddRecord} onDeleteRecord={handleDeleteRecord} />;
@@ -355,7 +364,6 @@ const App: React.FC = () => {
       case 'reports': 
         return <ReportsView user={user} students={students} records={records} users={users} attendance={attendance} />;
       
-      // FIX: Ensure AttendanceView Props are Clean
       case 'attendance_student': 
         return <AttendanceView 
                   user={user} 
@@ -382,6 +390,10 @@ const App: React.FC = () => {
       
       case 'profile': 
         return <ProfileSettings user={user} onUpdateUser={handleUpdateUser} />;
+
+      // NEW: TUTORIAL ROUTE
+      case 'tutorial':
+        return <TutorialGuide />;
       
       default: 
         return <Dashboard user={user} students={students} records={records} exams={exams} connectionError={connectionError} />;

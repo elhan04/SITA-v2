@@ -187,19 +187,29 @@ const Dashboard: React.FC<DashboardProps> = ({ user, students, records, exams = 
                         // Handle display when details might be missing (data from cloud)
                         // Priority: 1. Full Details 2. Flat Juz & Category 3. Just Category
                         const displayLabel = exam.details 
-                          ? `${exam.details.juz}, Hal ${exam.details.halaman}`
-                          : (exam.juz ? `${exam.juz}, ${exam.category}` : exam.category);
+                          ? `${exam.details.surat || exam.details.halaman}`
+                          : exam.category;
+                        
+                        // Menampilkan Juz dan Kelas
+                        const juzLabel = exam.juz || exam.details?.juz || '-';
+                        const classLabel = s?.class || exam.class || '-';
 
                         return (
                             <div key={exam.id} className="border-b pb-3 last:border-0 last:pb-0">
-                                <div className="flex justify-between items-center mb-1">
-                                    <p className="font-medium text-sm text-gray-800 truncate w-32">{s?.name}</p>
-                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${exam.score >= 70 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                <div className="flex justify-between items-start mb-1">
+                                    <div>
+                                      <p className="font-bold text-sm text-gray-800 truncate w-36">{s?.name}</p>
+                                      <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 border font-medium">Kelas {classLabel}</span>
+                                        <span className="text-[10px] bg-indigo-50 px-1.5 py-0.5 rounded text-indigo-600 border border-indigo-100 font-medium">{juzLabel}</span>
+                                      </div>
+                                    </div>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded ${exam.score >= 70 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                         {exam.score}
                                     </span>
                                 </div>
-                                <p className="text-xs text-gray-500 flex items-center gap-1">
-                                    {displayLabel}
+                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                    Materi: {displayLabel}
                                 </p>
                             </div>
                         )

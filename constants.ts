@@ -10,18 +10,15 @@ export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyMYe
 // 2. SETUP LOGO (LOGIN & DASHBOARD)
 // ---------------------------------------------------------------------------
 // CARA MENGGUNAKAN GOOGLE DRIVE:
-// 1. Upload logo ke Google Drive -> Klik Kanan -> Bagikan (Share).
-// 2. Ubah akses ke "Siapa saja yang memiliki link" (Anyone with the link).
-// 3. Salin Link, contoh: https://drive.google.com/file/d/1ABC-xyz.../view
-// 4. Ambil ID di tengah (misal: 1ABC-xyz...)
-// 5. Masukkan ke format: https://drive.google.com/uc?export=view&id=ID_FILE_ANDA
+// 1. Pastikan File di Drive aksesnya "Anyone with the link" (Siapa saja yang memiliki link).
+// 2. Gunakan format: https://drive.google.com/uc?export=view&id=ID_FILE_ANDA
 // ---------------------------------------------------------------------------
 
-// GANTI ID DI BAWAH INI DENGAN ID FILE GAMBAR DRIVE ANDA
-export const LOGO_URL = "https://drive.google.com/uc?export=view&id=1TVfDQ2RysRmOgfIr0hUL9H1l7Rth_AsK"; 
+// Gunakan logo default ini dulu agar pasti muncul:
+export const LOGO_URL = "https://cdn-icons-png.flaticon.com/512/3063/3063206.png"; 
 
-// Contoh format Google Drive (Ganti ID-nya):
-// export const LOGO_URL = "https://drive.google.com/uc?export=view&id=1HuQaX...ID_GAMBAR_ANDA..._Sc";
+// Jika ingin pakai Google Drive Anda (Pastikan permission publik):
+// export const LOGO_URL = "https://drive.google.com/uc?export=view&id=1TVfDQ2RysRmOgfIr0hUL9H1l7Rth_AsK";
 
 
 // WhatsApp Number for Admin

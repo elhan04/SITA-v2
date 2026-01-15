@@ -1,5 +1,3 @@
-
-
 export type Role = 'admin' | 'teacher' | 'parent';
 
 export enum Grade {
@@ -66,6 +64,7 @@ export interface Exam {
   status: 'pass' | 'fail' | 'remedial';
   notes: string;
   juz?: string; // Added field for Database compatibility
+  class?: string; // Added for historical data compatibility
   details?: {
     juz: string;
     surat: string;

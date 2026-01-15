@@ -46,8 +46,16 @@ const LoginScreen = ({ onLogin, users, students, isLoadingData, connectionError 
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
         <div className="text-center mb-8">
-          <div className="w-24 h-24 mx-auto mb-4 relative bg-gray-50 rounded-full p-2 flex items-center justify-center">
-             <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain drop-shadow-sm" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+          <div className="w-24 h-24 mx-auto mb-4 relative bg-gray-50 rounded-full p-2 flex items-center justify-center border border-gray-100 shadow-sm overflow-hidden">
+             <img 
+                src={LOGO_URL} 
+                alt="Logo" 
+                className="w-full h-full object-contain" 
+                onError={(e) => { 
+                    // Fallback to a safe icon if logo fails
+                    (e.target as HTMLImageElement).src = 'https://cdn-icons-png.flaticon.com/512/3063/3063206.png'; 
+                }} 
+             />
           </div>
           <h1 className="text-2xl font-bold text-gray-800">Darul Abror IBS</h1>
           <p className="text-emerald-600 font-medium text-sm mt-1">Sistem Informasi Tahfidz</p>
@@ -136,6 +144,13 @@ const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [urlAction, setUrlAction] = useState<{ type: string, name: string } | null>(null);
 
+  // Helper to extract clean ID if Sheet has "ID | Name" format
+  const cleanId = (id: string) => {
+      if (!id) return '';
+      // Split by " | " and take the first part
+      return id.toString().split(' | ')[0].trim();
+  };
+
   useEffect(() => {
      const fetchData = async () => {
         if (!GOOGLE_SCRIPT_URL) { setConnectionError('no_url'); return; }
@@ -144,9 +159,31 @@ const App: React.FC = () => {
         if (data) {
            if(data.users?.length) setUsers(data.users);
            if(data.students) setStudents(data.students);
-           if(data.records) setRecords(data.records);
-           if(data.attendance) setAttendance(data.attendance);
-           if(data.exams) setExams(data.exams);
+           
+           // Clean IDs when loading records from Sheet (in case they are stored as "ID | Name")
+           if(data.records) {
+               const cleanedRecords = data.records.map((r: any) => ({
+                   ...r,
+                   studentId: cleanId(r.studentId)
+               }));
+               setRecords(cleanedRecords);
+           }
+           
+           if(data.attendance) {
+               const cleanedAttendance = data.attendance.map((a: any) => ({
+                   ...a,
+                   userId: cleanId(a.userId)
+               }));
+               setAttendance(cleanedAttendance);
+           }
+
+           if(data.exams) {
+               const cleanedExams = data.exams.map((e: any) => ({
+                   ...e,
+                   studentId: cleanId(e.studentId)
+               }));
+               setExams(cleanedExams);
+           }
         } else setConnectionError('fetch_failed');
         setIsLoadingData(false);
      };
@@ -156,7 +193,7 @@ const App: React.FC = () => {
   const handleAddRecord = (newRecord: TahfidzRecord) => {
     setRecords([newRecord, ...records]);
     const student = students.find(s => s.id === newRecord.studentId);
-    // Include student name and class for database clarity
+    // STORE "ID | NAME" IN SHEET BUT KEEP ID IN APP
     const payload = { 
         ...newRecord, 
         studentId: student ? `${student.id} | ${student.name}` : newRecord.studentId,

@@ -10,10 +10,14 @@ interface AdminPanelProps {
   onDeleteUser: (id: string) => void;
   onAddStudent: (student: Student) => void;
   onDeleteStudent: (id: string) => void;
+  // New Bulk Props
+  onBulkAddStudents: (students: Student[]) => void;
+  onBulkAddUsers: (users: User[]) => void;
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ 
-  users, students, onAddUser, onDeleteUser, onAddStudent, onDeleteStudent 
+  users, students, onAddUser, onDeleteUser, onAddStudent, onDeleteStudent,
+  onBulkAddStudents, onBulkAddUsers
 }) => {
   const [activeTab, setActiveTab] = useState<'santri' | 'guru'>('santri');
   const [inputMode, setInputMode] = useState<'single' | 'bulk'>('single');
@@ -43,6 +47,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     const lines = rawData.split('\n');
     let successCount = 0;
     
+    // Arrays to hold batch data
+    const batchStudents: Student[] = [];
+    const batchUsers: User[] = [];
+    
     // Filter empty lines
     const dataRows = lines.filter(line => line.trim() !== '');
 
@@ -63,7 +71,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             const teacher = teachers.find(t => t.username === teacherUsername);
             
             const student: Student = {
-                id: 's' + Math.random().toString(36).substr(2, 9),
+                id: 's' + Math.random().toString(36).substr(2, 9) + Math.random().toString(36).substr(2, 5),
                 name: cols[0] || 'Tanpa Nama',
                 nis: cols[1] || '-',
                 class: cols[2] || '-',
@@ -74,28 +82,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 username: cols[1] || `user${Math.floor(Math.random()*1000)}`,
                 password: cols[5] || '123'
             };
-            onAddStudent(student);
+            batchStudents.push(student);
             successCount++;
         }
       } else if (activeTab === 'guru') {
         // Format: Nama, Username, Password, NoHP
         if (cols.length >= 3) {
           const teacher: User = {
-            id: 'u' + Math.random().toString(36).substr(2, 9),
+            id: 'u' + Math.random().toString(36).substr(2, 9) + Math.random().toString(36).substr(2, 5),
             name: cols[0],
             role: 'teacher',
             username: cols[1],
             password: cols[2],
             phoneNumber: cols[3] || ''
           };
-          onAddUser(teacher);
+          batchUsers.push(teacher);
           successCount++;
         }
       }
     });
 
+    // Perform Batch Update
+    if (activeTab === 'santri' && batchStudents.length > 0) {
+        onBulkAddStudents(batchStudents);
+    } else if (activeTab === 'guru' && batchUsers.length > 0) {
+        onBulkAddUsers(batchUsers);
+    }
+
     if (successCount > 0) {
-        alert(`Berhasil menambahkan ${successCount} data ${activeTab}.`);
+        alert(`Berhasil menambahkan ${successCount} data ${activeTab}. Data akan tampil di tabel sesaat lagi.`);
         setBulkText('');
     } else {
         alert("Gagal memproses data. Pastikan format sesuai.");

@@ -4,28 +4,27 @@ import { User, Student, TahfidzRecord, Attendance, Exam, Grade } from './types';
 // CONFIGURATION & TUTORIAL SETUP
 // ---------------------------------------------------------------------------
 // 1. SETUP DATABASE (GOOGLE SHEETS)
-//    - Buka file 'backend_script.js' di project ini, copy isinya.
-//    - Buat Google Sheet baru -> Ekstensi -> Apps Script.
-//    - Paste kode tadi, Save, lalu Deploy -> New Deployment.
-//    - Pilih Type: 'Web App', Who has access: 'Anyone' (PENTING!).
-//    - Copy URL '/exec' yang didapat, paste di bawah ini:
-// ---------------------------------------------------------------------------
-
-export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwh5sJq7bbV2C2JtX3XaFVJo1LhilSWBcPN6D06aTompKxMRkIrjh30FUrK8oM855xO/exec"; 
-// Contoh: "https://script.google.com/macros/s/AKfycbx.../exec"
-
-// Jika URL di atas kosong (""), aplikasi akan berjalan di Mode Offline (Data tidak tersimpan ke cloud).
+export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyMYeW8eygAeRxRs4Dc3nE2hWJBk7ZG2vV7rEN6VAvJ4A-0fedggYJpkZMEgzxKaOY/exec"; 
 
 // ---------------------------------------------------------------------------
 // 2. SETUP LOGO (LOGIN & DASHBOARD)
-//    - Cara A (File): Ganti file 'logo.png' di folder 'public/' dengan logo Anda.
-//    - Cara B (URL): Ganti nilai LOGO_URL di bawah ini dengan link gambar online.
+// ---------------------------------------------------------------------------
+// CARA MENGGUNAKAN GOOGLE DRIVE:
+// 1. Upload logo ke Google Drive -> Klik Kanan -> Bagikan (Share).
+// 2. Ubah akses ke "Siapa saja yang memiliki link" (Anyone with the link).
+// 3. Salin Link, contoh: https://drive.google.com/file/d/1ABC-xyz.../view
+// 4. Ambil ID di tengah (misal: 1ABC-xyz...)
+// 5. Masukkan ke format: https://drive.google.com/uc?export=view&id=ID_FILE_ANDA
 // ---------------------------------------------------------------------------
 
-// Replace this URL with your actual logo.png path if hosting locally, e.g., "/logo.png"
-export const LOGO_URL = "/logo.png";
+// GANTI ID DI BAWAH INI DENGAN ID FILE GAMBAR DRIVE ANDA
+export const LOGO_URL = "https://drive.google.com/uc?export=view&id=1TVfDQ2RysRmOgfIr0hUL9H1l7Rth_AsK"; 
 
-// WhatsApp Number for Admin (Format: 628xxxxxxxx) to receive permission requests
+// Contoh format Google Drive (Ganti ID-nya):
+// export const LOGO_URL = "https://drive.google.com/uc?export=view&id=1HuQaX...ID_GAMBAR_ANDA..._Sc";
+
+
+// WhatsApp Number for Admin
 export const ADMIN_PHONE = "6281234567890"; 
 
 export const SURAH_LIST = [
@@ -51,7 +50,6 @@ export const SURAH_LIST = [
   "Al-Ikhlas", "Al-Falaq", "An-Nas"
 ];
 
-// Format: [No, Name, StartPage]
 export const QURAN_CHAPTERS: [number, string, number][] = [
     [1, "Al-Fatihah", 1], [2, "Al-Baqarah", 2], [3, "Ali 'Imran", 50], [4, "An-Nisa'", 77],
     [5, "Al-Ma'idah", 106], [6, "Al-An'am", 128], [7, "Al-A'raf", 151], [8, "Al-Anfal", 177],
@@ -84,13 +82,9 @@ export const QURAN_CHAPTERS: [number, string, number][] = [
     [113, "Al-Falaq", 604], [114, "An-Nas", 604]
 ];
 
-// DATA AWAL (Initial Data) - Digunakan untuk mode Offline
 export const MOCK_USERS: User[] = [
-  // 1. Akun Admin
   { id: 'u1', name: 'Super Admin', role: 'admin', username: 'admin', password: '123', phoneNumber: '62811111111' },
-  // 2. Akun Guru
   { id: 'u2', name: 'Ust. Abdullah', role: 'teacher', username: 'guru', password: '123', phoneNumber: '62822222222' },
-  // 3. Akun Wali Santri (Orang Tua) - Login menggunakan childId
   { id: 'u3', name: 'Pak Ahmad (Wali)', role: 'parent', username: 'wali', password: '123', phoneNumber: '62833333333', childId: 's1' },
 ];
 
@@ -101,9 +95,9 @@ export const MOCK_STUDENTS: Student[] = [
     nis: '2024001',
     class: '7A',
     halaqah: 'Halaqah 1',
-    teacherId: 'u2', // Dibimbing oleh Ust. Abdullah
+    teacherId: 'u2',
     totalJuz: 2,
-    username: 'santri', // Bisa login dengan username 'santri' atau nis '2024001'
+    username: 'santri',
     password: '123'
   },
   {

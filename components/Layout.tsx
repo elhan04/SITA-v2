@@ -58,7 +58,6 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, activeTab, onTabChange,
       ];
     }
 
-    // Admin
     return [
       ...common,
       { id: 'master_data', label: 'Data Master', icon: Database },
@@ -66,19 +65,28 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, activeTab, onTabChange,
       { id: 'attendance_teacher', label: 'Absensi Guru', icon: UserCheck },
       { id: 'exam', label: 'Data Ujian', icon: Award },
       { id: 'reports', label: 'Laporan', icon: FileText },
-      { id: 'tutorial', label: 'Panduan Sistem', icon: HelpCircle }, // Added Tutorial Link
+      { id: 'tutorial', label: 'Panduan Sistem', icon: HelpCircle },
       profileMenu
     ];
   };
 
   const menuItems = getMenuItems(user.role);
+  // Find the currently active menu item for header display
+  const activeMenuItem = menuItems.find(i => i.id === activeTab) || menuItems[0];
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-      {/* Mobile Header - Hidden on Print */}
+      {/* Mobile Header */}
       <div className="md:hidden bg-primary text-white p-4 flex justify-between items-center shadow-md print:hidden">
         <div className="flex items-center gap-3">
-          <img src={LOGO_URL} alt="Logo" className="w-8 h-8 object-contain bg-white rounded-full p-0.5" />
+          <img 
+            src={LOGO_URL} 
+            alt="Logo" 
+            className="w-10 h-10 object-contain bg-white rounded-full p-1" 
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://cdn-icons-png.flaticon.com/512/3063/3063206.png';
+            }}
+          />
           <h1 className="font-bold text-lg">Darul Abror IBS</h1>
         </div>
         <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
@@ -86,35 +94,42 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, activeTab, onTabChange,
         </button>
       </div>
 
-      {/* Sidebar - Hidden on Print */}
+      {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out
         md:relative md:translate-x-0 print:hidden
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        <div className="p-6 bg-primary text-white h-40 flex flex-col justify-center items-center text-center">
-          <div className="w-16 h-16 bg-white rounded-full p-1 mb-3 shadow-lg overflow-hidden">
-             <img src={user.avatar || LOGO_URL} alt="User Avatar" className="w-full h-full object-cover" />
+        <div className="p-6 bg-primary text-white h-48 flex flex-col justify-center items-center text-center">
+          <div className="w-20 h-20 bg-white rounded-full p-2 mb-3 shadow-lg flex items-center justify-center overflow-hidden">
+             <img 
+                src={LOGO_URL} 
+                alt="Darul Abror Logo" 
+                className="w-full h-full object-contain" 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://cdn-icons-png.flaticon.com/512/3063/3063206.png';
+                }}
+             />
           </div>
-          <h2 className="text-lg font-bold leading-tight truncate w-full px-2">{user.name}</h2>
+          <h2 className="text-lg font-bold leading-tight">Darul Abror IBS</h2>
           <p className="text-emerald-100 text-xs opacity-90 mt-1">Sistem Informasi Tahfidz</p>
         </div>
         
         <div className="p-4 border-b">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-primary font-bold overflow-hidden">
-              {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : user.name.charAt(0)}
+              {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" alt="avatar" /> : user.name.charAt(0)}
             </div>
             <div>
               <p className="font-medium text-gray-800 text-sm truncate w-36">{user.name}</p>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border capitalize">
-                {user.role === 'admin' ? 'Administrator' : user.role === 'teacher' ? 'Guru Halaqah' : 'Orang Tua'}
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border uppercase font-bold">
+                {user.role}
               </span>
             </div>
           </div>
         </div>
 
-        <nav className="p-4 space-y-2 overflow-y-auto max-h-[calc(100vh-300px)]">
+        <nav className="p-4 space-y-2 overflow-y-auto max-h-[calc(100vh-320px)]">
           {menuItems.map((item) => (
             <button
               key={item.id}
@@ -124,12 +139,12 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, activeTab, onTabChange,
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                 activeTab === item.id 
-                  ? 'bg-emerald-50 text-primary font-medium' 
+                  ? 'bg-emerald-50 text-primary font-bold' 
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <item.icon size={20} />
-              {item.label}
+              <span className="text-sm">{item.label}</span>
             </button>
           ))}
         </nav>
@@ -137,7 +152,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, activeTab, onTabChange,
         <div className="absolute bottom-0 w-full p-4 border-t bg-white">
           <button 
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium text-sm"
           >
             <LogOut size={20} />
             Keluar
@@ -145,7 +160,7 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, activeTab, onTabChange,
         </div>
       </aside>
 
-      {/* Overlay for mobile sidebar */}
+      {/* Overlay */}
       {isSidebarOpen && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden print:hidden"
@@ -156,10 +171,16 @@ const Layout: React.FC<LayoutProps> = ({ user, onLogout, activeTab, onTabChange,
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 overflow-y-auto h-screen print:h-auto print:overflow-visible">
         <header className="mb-8 hidden md:block print:hidden">
-           <h1 className="text-2xl font-bold text-gray-800">
-             {menuItems.find(i => i.id === activeTab)?.label || 'Dashboard'}
-           </h1>
-           <p className="text-gray-500 text-sm">Selamat Datang di Sistem Informasi Tahfidz</p>
+           <div className="flex items-center gap-3 mb-1">
+             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+               {/* Fixed: using activeMenuItem.icon instead of undefined item.icon */}
+               <activeMenuItem.icon size={18} />
+             </div>
+             <h1 className="text-2xl font-bold text-gray-800">
+               {activeMenuItem.label}
+             </h1>
+           </div>
+           <p className="text-gray-500 text-sm">Sistem Informasi Tahfidz Al Qur’an Darul Abror IBS V.1</p>
         </header>
         {children}
       </main>

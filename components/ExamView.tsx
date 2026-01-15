@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Student, Exam } from '../types';
 import { QURAN_CHAPTERS } from '../constants';
-import { Award, Play, ChevronLeft, ChevronRight, AlertTriangle, Maximize2, Minimize2, Sun, ZoomIn, ZoomOut, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { Award, Play, ChevronLeft, ChevronRight, Maximize2, Minimize2, Sun, ZoomIn, ZoomOut, Save, Trash2 } from 'lucide-react';
 
 interface ExamViewProps {
   user: User;
@@ -29,7 +29,6 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
   const [score, setScore] = useState<number>(100);
   const [mistakes, setMistakes] = useState({ dibantu: 0, ditegur: 0, berhenti: 0 });
   const [imgLoading, setImgLoading] = useState(false);
-  const [imgError, setImgError] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [imageBrightness, setImageBrightness] = useState(100);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -88,6 +87,7 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
   const handleMistake = (type: 'dibantu' | 'ditegur' | 'berhenti') => {
     const newMistakes = { ...mistakes, [type]: mistakes[type] + 1 };
     setMistakes(newMistakes);
+    // LOGIC POIN: Dibantu = 2, Ditegur = 1, Stop = 0.5
     const penalty = (newMistakes.dibantu * 2) + (newMistakes.ditegur * 1) + (newMistakes.berhenti * 0.5);
     setScore(Math.max(0, 100 - penalty));
   };
@@ -107,6 +107,7 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
       status: status,
       notes: status.toUpperCase(),
       juz: juzString,
+      class: currentSession.student.class,
       details: { juz: juzString, surat: examMode === 'surat' ? currentSession.label : `Hal ${currentSession.start}`, halaman: `${currentSession.start}-${currentSession.end}`, mistakes }
     });
     localStorage.removeItem('sita_live_exam_session_v1');
@@ -116,13 +117,32 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
 
   const renderLiveExam = () => {
     const imageUrl = `https://android.quran.com/data/width_1024/page${currentPage.toString().padStart(3, '0')}.png`;
+    
+    // UI BUTTONS FOR SCORING
+    const ScoringButtons = () => (
+         <div className="grid grid-cols-3 gap-3 w-full md:flex-1">
+            <button onClick={() => handleMistake('dibantu')} className="flex flex-col items-center p-2 rounded-lg border bg-white shadow-sm hover:bg-red-50 active:scale-95 transition-all">
+                <span className="text-xl font-bold text-gray-800">{mistakes.dibantu}</span>
+                <span className="text-[10px] text-red-500 uppercase font-bold">DIBANTU (-2)</span>
+            </button>
+            <button onClick={() => handleMistake('ditegur')} className="flex flex-col items-center p-2 rounded-lg border bg-white shadow-sm hover:bg-yellow-50 active:scale-95 transition-all">
+                <span className="text-xl font-bold text-gray-800">{mistakes.ditegur}</span>
+                <span className="text-[10px] text-yellow-600 uppercase font-bold">DITEGUR (-1)</span>
+            </button>
+            <button onClick={() => handleMistake('berhenti')} className="flex flex-col items-center p-2 rounded-lg border bg-white shadow-sm hover:bg-gray-50 active:scale-95 transition-all">
+                <span className="text-xl font-bold text-gray-800">{mistakes.berhenti}</span>
+                <span className="text-[10px] text-gray-500 uppercase font-bold">STOP (-0.5)</span>
+            </button>
+        </div>
+    );
+
     const NavigationButtons = () => (
       <div className="flex gap-2 w-full">
         <button onClick={() => { if (currentPage > currentSession.start) { setImgLoading(true); setCurrentPage(c => c - 1); }}} disabled={currentPage <= currentSession.start} className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 text-gray-600 rounded-lg disabled:opacity-50"><ChevronLeft size={20} /> <span className="hidden md:inline">Sebelumnya</span></button>
         {currentPage < currentSession.end ? (
-          <button onClick={() => { setImgLoading(true); setCurrentPage(c => c + 1); }} className="flex-[2] flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-lg shadow-sm">Lanjut <ChevronRight size={20} /></button>
+          <button onClick={() => { setImgLoading(true); setCurrentPage(c => c + 1); }} className="flex-[2] flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-lg shadow-sm hover:bg-emerald-700">Lanjut <ChevronRight size={20} /></button>
         ) : (
-          <button onClick={handleFinishExam} className="flex-[2] flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-lg font-bold"><Save size={20} /> SELESAI</button>
+          <button onClick={handleFinishExam} className="flex-[2] flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-lg font-bold shadow-lg hover:bg-green-700"><Save size={20} /> SELESAI</button>
         )}
       </div>
     );
@@ -131,26 +151,42 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
       return (
         <div className="fixed inset-0 z-50 bg-white flex flex-col h-[100dvh] animate-fade-in">
           <div className="bg-white/95 backdrop-blur shadow-sm border-b px-4 py-2 flex justify-between items-center z-20 shrink-0">
-             <div><h2 className="font-bold text-gray-800 text-lg leading-none">{currentSession.student.name}</h2><p className="text-[10px] text-gray-500 mt-1 uppercase">HALAMAN {currentPage}</p></div>
+             <div className="flex items-center gap-3">
+                 <div>
+                    <h2 className="font-bold text-gray-800 text-lg leading-none truncate max-w-[150px]">{currentSession.student.name}</h2>
+                    <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold">HALAMAN {currentPage}</p>
+                 </div>
+                 {/* SCORE DI FULLSCREEN */}
+                 <div className="bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200">
+                    <div className="text-[10px] text-emerald-800 font-bold leading-none">NILAI</div>
+                    <div className="text-xl font-black text-emerald-700 leading-none">{score.toFixed(1)}</div>
+                 </div>
+             </div>
+             
              <div className="flex items-center gap-2">
+                 {/* ZOOM CONTROLS */}
+                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 mr-2">
+                    <button onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.1))} className="p-1 hover:bg-white rounded"><ZoomOut size={16} /></button>
+                    <span className="text-xs font-mono w-8 text-center">{Math.round(zoomLevel * 100)}%</span>
+                    <button onClick={() => setZoomLevel(z => Math.min(3, z + 0.1))} className="p-1 hover:bg-white rounded"><ZoomIn size={16} /></button>
+                 </div>
+
                  <div className="hidden md:flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full"><Sun size={14} className="text-gray-400" /><input type="range" min="80" max="150" value={imageBrightness} onChange={(e) => setImageBrightness(parseInt(e.target.value))} className="w-20 h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer" /></div>
-                 <button onClick={() => setIsFullScreen(false)} className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium"><Minimize2 size={16} /></button>
+                 <button onClick={() => setIsFullScreen(false)} className="bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-200"><Minimize2 size={16} /></button>
              </div>
           </div>
-          <div className="flex-1 relative overflow-auto bg-white flex items-center justify-center p-4">
-             {imgLoading && <div className="absolute inset-0 flex items-center justify-center z-10 bg-white"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>}
-             <div className="relative" style={{ height: `${zoomLevel * 100}%`, minHeight: '100%', display: imgLoading ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img src={imageUrl} alt={`Page ${currentPage}`} className="h-full w-auto shadow-sm" onLoad={() => { setImgLoading(false); setImgError(false); }} onError={() => { setImgLoading(false); setImgError(true); }} style={{ filter: `brightness(${imageBrightness}%) contrast(1.1)` }} />
+          <div className="flex-1 relative overflow-auto bg-gray-50 flex items-start justify-center p-4">
+             {imgLoading && <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/80"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>}
+             
+             {/* Image container with Zoom */}
+             <div style={{ width: `${zoomLevel * 100}%`, maxWidth: 'none', transition: 'width 0.2s ease-out' }} className="flex justify-center min-h-full">
+                <img src={imageUrl} alt={`Page ${currentPage}`} className="w-full h-auto shadow-lg bg-white" onLoad={() => { setImgLoading(false); }} onError={() => { setImgLoading(false); }} style={{ filter: `brightness(${imageBrightness}%) contrast(1.1)` }} />
              </div>
           </div>
-          {/* FOOTER: Ditambah pb-12 untuk menghindari terpotong browser mobile */}
-          <div className="bg-white border-t p-3 md:p-4 pb-12 md:pb-6 z-20 shrink-0 shadow-lg relative">
+          {/* FOOTER */}
+          <div className="bg-white border-t p-3 md:p-4 pb-8 md:pb-6 z-20 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] relative">
              <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-4">
-                <div className="grid grid-cols-3 gap-3 w-full md:flex-1">
-                    <button onClick={() => handleMistake('dibantu')} className="flex flex-col items-center p-2 rounded-lg border bg-white"><span className="text-lg font-bold">{mistakes.dibantu}</span><span className="text-[8px] text-red-500 uppercase font-bold">DIBANTU</span></button>
-                    <button onClick={() => handleMistake('ditegur')} className="flex flex-col items-center p-2 rounded-lg border bg-white"><span className="text-lg font-bold">{mistakes.ditegur}</span><span className="text-[8px] text-yellow-600 uppercase font-bold">DITEGUR</span></button>
-                    <button onClick={() => handleMistake('berhenti')} className="flex flex-col items-center p-2 rounded-lg border bg-white"><span className="text-lg font-bold">{mistakes.berhenti}</span><span className="text-[8px] text-gray-500 uppercase font-bold">STOP</span></button>
-                </div>
+                <ScoringButtons />
                 <div className="w-full md:w-80"><NavigationButtons /></div>
              </div>
           </div>
@@ -158,27 +194,24 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
       );
     }
 
+    // NORMAL VIEW
     return (
       <div className="flex flex-col lg:flex-row h-[calc(100vh-160px)] gap-4 animate-fade-in">
-        <div className="relative bg-amber-50 rounded-xl overflow-hidden shadow-inner border border-amber-100 flex-1 flex flex-col">
-          <button onClick={() => setIsFullScreen(true)} className="absolute top-4 right-4 z-20 bg-white/80 p-2 rounded-full shadow-md text-gray-700"><Maximize2 size={20} /></button>
+        <div className="relative bg-amber-50 rounded-xl overflow-hidden shadow-inner border border-amber-100 flex-1 flex flex-col group">
+          <button onClick={() => setIsFullScreen(true)} className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur p-2 rounded-full shadow-md text-gray-700 hover:text-primary transition-colors"><Maximize2 size={20} /></button>
           <div className="flex-1 overflow-y-auto flex items-start justify-center p-4">
              {imgLoading && <div className="absolute inset-0 flex items-center justify-center bg-amber-50 z-10"><div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>}
-             <img src={imageUrl} alt={`Page ${currentPage}`} className="shadow-lg rounded max-w-full h-auto" onLoad={() => { setImgLoading(false); setImgError(false); }} style={{ display: imgLoading ? 'none' : 'block' }} />
+             <img src={imageUrl} alt={`Page ${currentPage}`} className="shadow-lg rounded max-w-full h-auto" onLoad={() => { setImgLoading(false); }} style={{ display: imgLoading ? 'none' : 'block' }} />
           </div>
           <div className="bg-white p-3 border-t text-center text-sm font-bold text-gray-500">Halaman {currentPage}</div>
         </div>
         <div className="w-full lg:w-96 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col shrink-0">
           <div className="p-4 border-b bg-gray-50 rounded-t-xl flex justify-between items-center"><div><h2 className="font-bold text-gray-800 leading-tight">{currentSession.student.name}</h2><p className="text-xs text-gray-500 mt-1">{currentSession.label}</p></div><div className="text-right"><div className="text-[10px] text-gray-400 font-bold">NILAI</div><div className="text-3xl font-black text-primary">{score.toFixed(1)}</div></div></div>
           <div className="p-4 space-y-4">
-             <div className="grid grid-cols-3 gap-3">
-                <button onClick={() => handleMistake('dibantu')} className="p-3 rounded-lg border-b-4 border-red-500 bg-white text-center shadow-sm"><span className="text-xl font-bold">{mistakes.dibantu}</span><span className="block text-[8px] text-red-500 font-bold">DIBANTU</span></button>
-                <button onClick={() => handleMistake('ditegur')} className="p-3 rounded-lg border-b-4 border-yellow-500 bg-white text-center shadow-sm"><span className="text-xl font-bold">{mistakes.ditegur}</span><span className="block text-[8px] text-yellow-600 font-bold">DITEGUR</span></button>
-                <button onClick={() => handleMistake('berhenti')} className="p-3 rounded-lg border-b-4 border-gray-400 bg-white text-center shadow-sm"><span className="text-xl font-bold">{mistakes.berhenti}</span><span className="block text-[8px] text-gray-500 font-bold">STOP</span></button>
-             </div>
+             <ScoringButtons />
           </div>
           <div className="flex-1"></div>
-          <div className="p-4 border-t space-y-3"><NavigationButtons /><button onClick={() => { if(confirm("Batal?")) setViewMode('list'); }} className="w-full text-xs text-red-500">Batalkan Ujian</button></div>
+          <div className="p-4 border-t space-y-3"><NavigationButtons /><button onClick={() => { if(confirm("Batal?")) setViewMode('list'); }} className="w-full text-xs text-red-500 hover:text-red-700">Batalkan Ujian</button></div>
         </div>
       </div>
     );
@@ -210,16 +243,35 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
     <div className="space-y-6">
       <div className="flex justify-between items-center"><div><h2 className="text-xl font-bold text-gray-800">Riwayat Ujian</h2></div>{user.role === 'teacher' && <button onClick={() => setViewMode('setup')} className="bg-primary text-white px-5 py-2.5 rounded-lg flex items-center gap-2"><Play size={18} /> Mulai Ujian</button>}</div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {exams.length === 0 ? <div className="col-span-full text-center py-12 text-gray-400">Belum ada data.</div> : exams.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exam => (
-          <div key={exam.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
-            <div className={`h-1.5 w-full ${exam.score >= 70 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-            <div className="p-5">
-              <div className="flex justify-between items-start mb-2"><div><h3 className="font-bold text-gray-800">{students.find(s => s.id === exam.studentId)?.name || 'Santri'}</h3><p className="text-xs text-gray-400">{exam.category}</p></div><div className="text-right font-black text-xl">{exam.score}</div></div>
-              <div className="text-xs text-gray-500 flex justify-between mt-4"><span>{exam.date}</span><span>{exam.examiner}</span></div>
-              {(user.role === 'admin' || user.role === 'teacher') && onDeleteExam && <button onClick={() => onDeleteExam(exam.id)} className="w-full mt-4 text-xs text-red-500 text-center flex items-center justify-center gap-1"><Trash2 size={12}/> Hapus</button>}
-            </div>
-          </div>
-        ))}
+        {exams.length === 0 ? <div className="col-span-full text-center py-12 text-gray-400">Belum ada data.</div> : exams.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exam => {
+            const s = students.find(st => st.id === exam.studentId);
+            const juzLabel = exam.juz || (exam.details?.juz) || 'Juz -';
+            const displayTitle = `${s?.class || '-'} | ${juzLabel}, ${exam.category}`;
+            
+            return (
+              <div key={exam.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className={`h-1.5 w-full ${exam.score >= 70 ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-2">
+                      <div>
+                          <h3 className="font-bold text-gray-800 text-lg">{s?.name || 'Santri'}</h3>
+                          <p className="text-sm font-medium text-primary mt-0.5">{displayTitle}</p>
+                      </div>
+                      <div className={`text-right font-black text-2xl ${exam.score >= 70 ? 'text-green-600' : 'text-red-600'}`}>{exam.score}</div>
+                  </div>
+                  <div className="text-xs text-gray-500 flex justify-between mt-4 border-t pt-3">
+                      <span>{new Date(exam.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      <span>{exam.examiner}</span>
+                  </div>
+                  {(user.role === 'admin' || user.role === 'teacher') && onDeleteExam && (
+                      <button onClick={() => onDeleteExam(exam.id)} className="w-full mt-3 pt-2 border-t border-dashed text-xs text-red-500 text-center flex items-center justify-center gap-1 hover:text-red-700">
+                          <Trash2 size={12}/> Hapus Data
+                      </button>
+                  )}
+                </div>
+              </div>
+            );
+        })}
       </div>
     </div>
   )}{viewMode === 'setup' && renderSetup()}{viewMode === 'live' && renderLiveExam()}</div>;

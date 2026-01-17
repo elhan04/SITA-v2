@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Student, Exam } from '../types';
 import { QURAN_CHAPTERS } from '../constants';
-import { Award, Play, ChevronLeft, ChevronRight, Maximize2, Minimize2, Sun, ZoomIn, ZoomOut, Save, Trash2, Search, Filter } from 'lucide-react';
+import { Award, Play, ChevronLeft, ChevronRight, Maximize2, Minimize2, Sun, ZoomIn, ZoomOut, Save, Trash2, Search, Filter, RotateCcw } from 'lucide-react';
 
 interface ExamViewProps {
   user: User;
@@ -14,6 +14,11 @@ interface ExamViewProps {
 
 type ViewMode = 'list' | 'setup' | 'live';
 type ExamMode = 'halaman' | 'surat';
+
+interface ExamHistoryState {
+  score: number;
+  mistakes: { dibantu: number; ditegur: number; berhenti: number };
+}
 
 const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, onDeleteExam }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -32,6 +37,7 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [score, setScore] = useState<number>(100);
   const [mistakes, setMistakes] = useState({ dibantu: 0, ditegur: 0, berhenti: 0 });
+  const [examHistory, setExamHistory] = useState<ExamHistoryState[]>([]); // Fitur Undo
   const [imgLoading, setImgLoading] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [imageBrightness, setImageBrightness] = useState(100);
@@ -48,6 +54,7 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
             setCurrentPage(data.currentPage);
             setScore(data.score);
             setMistakes(data.mistakes);
+            setExamHistory(data.examHistory || []);
             setExamMode(data.examMode);
             setIsFullScreen(data.isFullScreen);
             setImageBrightness(data.imageBrightness || 100);
@@ -61,10 +68,10 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
   useEffect(() => {
     if (viewMode === 'live' && currentSession) {
       localStorage.setItem('sita_live_exam_session_v1', JSON.stringify({
-        viewMode, currentSession, currentPage, score, mistakes, examMode, isFullScreen, imageBrightness, zoomLevel
+        viewMode, currentSession, currentPage, score, mistakes, examHistory, examMode, isFullScreen, imageBrightness, zoomLevel
       }));
     } else if (viewMode === 'list') localStorage.removeItem('sita_live_exam_session_v1');
-  }, [viewMode, currentSession, currentPage, score, mistakes, examMode, isFullScreen, imageBrightness, zoomLevel]);
+  }, [viewMode, currentSession, currentPage, score, mistakes, examHistory, examMode, isFullScreen, imageBrightness, zoomLevel]);
 
   const handleStartExam = () => {
     if (!selectedStudentId) return alert("Pilih santri");
@@ -83,16 +90,29 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
     setCurrentPage(start);
     setScore(100);
     setMistakes({ dibantu: 0, ditegur: 0, berhenti: 0 });
+    setExamHistory([]);
     setIsFullScreen(false);
     setZoomLevel(1);
     setViewMode('live');
   };
 
   const handleMistake = (type: 'dibantu' | 'ditegur' | 'berhenti') => {
+    // Simpan keadaan sekarang ke history sebelum diubah
+    setExamHistory(prev => [...prev, { score, mistakes: { ...mistakes } }]);
+    
     const newMistakes = { ...mistakes, [type]: mistakes[type] + 1 };
     setMistakes(newMistakes);
     const penalty = (newMistakes.dibantu * 2) + (newMistakes.ditegur * 1) + (newMistakes.berhenti * 0.5);
     setScore(Math.max(0, 100 - penalty));
+  };
+
+  const handleUndo = () => {
+    if (examHistory.length === 0) return;
+    
+    const lastState = examHistory[examHistory.length - 1];
+    setScore(lastState.score);
+    setMistakes(lastState.mistakes);
+    setExamHistory(prev => prev.slice(0, -1));
   };
 
   const handleFinishExam = () => {
@@ -122,7 +142,7 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
     const imageUrl = `https://android.quran.com/data/width_1024/page${currentPage.toString().padStart(3, '0')}.png`;
     
     const ScoringButtons = () => (
-         <div className="grid grid-cols-3 gap-3 w-full md:flex-1">
+         <div className="grid grid-cols-3 gap-3 w-full md:flex-1 relative">
             <button onClick={() => handleMistake('dibantu')} className="flex flex-col items-center p-2 rounded-lg border bg-white shadow-sm hover:bg-red-50 active:scale-95 transition-all">
                 <span className="text-xl font-bold text-gray-800">{mistakes.dibantu}</span>
                 <span className="text-[10px] text-red-500 uppercase font-bold">DIBANTU (-2)</span>
@@ -135,6 +155,17 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
                 <span className="text-xl font-bold text-gray-800">{mistakes.berhenti}</span>
                 <span className="text-[10px] text-gray-500 uppercase font-bold">STOP (-0.5)</span>
             </button>
+            
+            {/* UNDO BUTTON FLOATING */}
+            {examHistory.length > 0 && (
+              <button 
+                onClick={handleUndo}
+                className="absolute -top-4 -right-2 bg-gray-800 text-white p-2 rounded-full shadow-lg hover:bg-black transition-all animate-bounce"
+                title="Urungkan penilaian terakhir"
+              >
+                <RotateCcw size={14} />
+              </button>
+            )}
         </div>
     );
 
@@ -158,9 +189,18 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
                     <h2 className="font-bold text-gray-800 text-lg leading-none truncate max-w-[150px]">{currentSession.student.name}</h2>
                     <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold">HALAMAN {currentPage}</p>
                  </div>
-                 <div className="bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200">
+                 <div className="bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200 relative">
                     <div className="text-[10px] text-emerald-800 font-bold leading-none">NILAI</div>
                     <div className="text-xl font-black text-emerald-700 leading-none">{score.toFixed(1)}</div>
+                    {examHistory.length > 0 && (
+                      <button 
+                        onClick={handleUndo}
+                        className="absolute -bottom-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600"
+                        title="Urungkan"
+                      >
+                        <RotateCcw size={10} />
+                      </button>
+                    )}
                  </div>
              </div>
              
@@ -202,7 +242,18 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
           <div className="bg-white p-3 border-t text-center text-sm font-bold text-gray-500">Halaman {currentPage}</div>
         </div>
         <div className="w-full lg:w-96 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col shrink-0">
-          <div className="p-4 border-b bg-gray-50 rounded-t-xl flex justify-between items-center"><div><h2 className="font-bold text-gray-800 leading-tight">{currentSession.student.name}</h2><p className="text-xs text-gray-500 mt-1">{currentSession.label}</p></div><div className="text-right"><div className="text-[10px] text-gray-400 font-bold">NILAI</div><div className="text-3xl font-black text-primary">{score.toFixed(1)}</div></div></div>
+          <div className="p-4 border-b bg-gray-50 rounded-t-xl flex justify-between items-center">
+            <div><h2 className="font-bold text-gray-800 leading-tight">{currentSession.student.name}</h2><p className="text-xs text-gray-500 mt-1">{currentSession.label}</p></div>
+            <div className="text-right">
+              <div className="text-[10px] text-gray-400 font-bold">NILAI</div>
+              <div className="text-3xl font-black text-primary">{score.toFixed(1)}</div>
+              {examHistory.length > 0 && (
+                <button onClick={handleUndo} className="text-[10px] text-red-500 flex items-center gap-1 hover:underline ml-auto mt-1 font-bold">
+                  <RotateCcw size={10} /> URUNGKAN
+                </button>
+              )}
+            </div>
+          </div>
           <div className="p-4 space-y-4">
              <ScoringButtons />
           </div>

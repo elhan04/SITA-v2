@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Student, Exam } from '../types';
 import { QURAN_CHAPTERS } from '../constants';
-import { Award, Play, ChevronLeft, ChevronRight, Maximize2, Minimize2, Sun, ZoomIn, ZoomOut, Save, Trash2 } from 'lucide-react';
+import { Award, Play, ChevronLeft, ChevronRight, Maximize2, Minimize2, Sun, ZoomIn, ZoomOut, Save, Trash2, Search, Filter } from 'lucide-react';
 
 interface ExamViewProps {
   user: User;
@@ -23,6 +23,10 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
   const [startPage, setStartPage] = useState<number>(1);
   const [packetSize, setPacketSize] = useState<number>(10);
   const [selectedSurah, setSelectedSurah] = useState<string>('1');
+
+  // Filter and Search for history
+  const [historySearchTerm, setHistorySearchTerm] = useState('');
+  const [historyFilterClass, setHistoryFilterClass] = useState('');
 
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState<number>(0);
@@ -87,7 +91,6 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
   const handleMistake = (type: 'dibantu' | 'ditegur' | 'berhenti') => {
     const newMistakes = { ...mistakes, [type]: mistakes[type] + 1 };
     setMistakes(newMistakes);
-    // LOGIC POIN: Dibantu = 2, Ditegur = 1, Stop = 0.5
     const penalty = (newMistakes.dibantu * 2) + (newMistakes.ditegur * 1) + (newMistakes.berhenti * 0.5);
     setScore(Math.max(0, 100 - penalty));
   };
@@ -118,7 +121,6 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
   const renderLiveExam = () => {
     const imageUrl = `https://android.quran.com/data/width_1024/page${currentPage.toString().padStart(3, '0')}.png`;
     
-    // UI BUTTONS FOR SCORING
     const ScoringButtons = () => (
          <div className="grid grid-cols-3 gap-3 w-full md:flex-1">
             <button onClick={() => handleMistake('dibantu')} className="flex flex-col items-center p-2 rounded-lg border bg-white shadow-sm hover:bg-red-50 active:scale-95 transition-all">
@@ -156,7 +158,6 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
                     <h2 className="font-bold text-gray-800 text-lg leading-none truncate max-w-[150px]">{currentSession.student.name}</h2>
                     <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold">HALAMAN {currentPage}</p>
                  </div>
-                 {/* SCORE DI FULLSCREEN */}
                  <div className="bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-200">
                     <div className="text-[10px] text-emerald-800 font-bold leading-none">NILAI</div>
                     <div className="text-xl font-black text-emerald-700 leading-none">{score.toFixed(1)}</div>
@@ -164,7 +165,6 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
              </div>
              
              <div className="flex items-center gap-2">
-                 {/* ZOOM CONTROLS */}
                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 mr-2">
                     <button onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.1))} className="p-1 hover:bg-white rounded"><ZoomOut size={16} /></button>
                     <span className="text-xs font-mono w-8 text-center">{Math.round(zoomLevel * 100)}%</span>
@@ -177,13 +177,10 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
           </div>
           <div className="flex-1 relative overflow-auto bg-gray-50 flex items-start justify-center p-4">
              {imgLoading && <div className="absolute inset-0 flex items-center justify-center z-10 bg-white/80"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>}
-             
-             {/* Image container with Zoom */}
              <div style={{ width: `${zoomLevel * 100}%`, maxWidth: 'none', transition: 'width 0.2s ease-out' }} className="flex justify-center min-h-full">
                 <img src={imageUrl} alt={`Page ${currentPage}`} className="w-full h-auto shadow-lg bg-white" onLoad={() => { setImgLoading(false); }} onError={() => { setImgLoading(false); }} style={{ filter: `brightness(${imageBrightness}%) contrast(1.1)` }} />
              </div>
           </div>
-          {/* FOOTER */}
           <div className="bg-white border-t p-3 md:p-4 pb-8 md:pb-6 z-20 shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] relative">
              <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-4">
                 <ScoringButtons />
@@ -194,7 +191,6 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
       );
     }
 
-    // NORMAL VIEW
     return (
       <div className="flex flex-col lg:flex-row h-[calc(100vh-160px)] gap-4 animate-fade-in">
         <div className="relative bg-amber-50 rounded-xl overflow-hidden shadow-inner border border-amber-100 flex-1 flex flex-col group">
@@ -239,11 +235,53 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
     </div>
   );
 
+  // Derived filtered exams for history list
+  const filteredExams = exams
+    .filter(e => {
+        const student = students.find(s => s.id === e.studentId);
+        const matchesSearch = student?.name.toLowerCase().includes(historySearchTerm.toLowerCase()) || 
+                              e.studentId.toLowerCase().includes(historySearchTerm.toLowerCase());
+        const matchesClass = !historyFilterClass || (student?.class === historyFilterClass);
+        return matchesSearch && matchesClass;
+    })
+    .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const distinctExamClasses = Array.from(new Set(students.map(s => s.class))).sort();
+
   return <div className="min-h-[500px]">{viewMode === 'list' && (
     <div className="space-y-6">
-      <div className="flex justify-between items-center"><div><h2 className="text-xl font-bold text-gray-800">Riwayat Ujian</h2></div>{user.role === 'teacher' && <button onClick={() => setViewMode('setup')} className="bg-primary text-white px-5 py-2.5 rounded-lg flex items-center gap-2"><Play size={18} /> Mulai Ujian</button>}</div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div><h2 className="text-xl font-bold text-gray-800">Riwayat Ujian</h2></div>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          {/* SEARCH BOX */}
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input 
+              type="text" 
+              placeholder="Cari nama santri..." 
+              value={historySearchTerm}
+              onChange={(e) => setHistorySearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:ring-primary focus:border-primary outline-none"
+            />
+          </div>
+          {/* CLASS FILTER */}
+          <div className="relative w-full md:w-40">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <select 
+              value={historyFilterClass}
+              onChange={(e) => setHistoryFilterClass(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:ring-primary focus:border-primary outline-none bg-white"
+            >
+              <option value="">Semua Kelas</option>
+              {distinctExamClasses.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          {user.role === 'teacher' && <button onClick={() => setViewMode('setup')} className="bg-primary text-white px-5 py-2.5 rounded-lg flex items-center gap-2 shadow-sm hover:bg-emerald-800 transition-colors"><Play size={18} /> Mulai Ujian</button>}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {exams.length === 0 ? <div className="col-span-full text-center py-12 text-gray-400">Belum ada data.</div> : exams.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(exam => {
+        {filteredExams.length === 0 ? <div className="col-span-full text-center py-12 text-gray-400">Belum ada data atau tidak ditemukan.</div> : filteredExams.map(exam => {
             const s = students.find(st => st.id === exam.studentId);
             const juzLabel = exam.juz || (exam.details?.juz) || 'Juz -';
             const displayTitle = `${s?.class || '-'} | ${juzLabel}, ${exam.category}`;
@@ -264,7 +302,7 @@ const ExamView: React.FC<ExamViewProps> = ({ user, students, exams, onAddExam, o
                       <span>{exam.examiner}</span>
                   </div>
                   {(user.role === 'admin' || user.role === 'teacher') && onDeleteExam && (
-                      <button onClick={() => onDeleteExam(exam.id)} className="w-full mt-3 pt-2 border-t border-dashed text-xs text-red-500 text-center flex items-center justify-center gap-1 hover:text-red-700">
+                      <button onClick={() => onDeleteExam(exam.id)} className="w-full mt-3 pt-2 border-t border-dashed text-xs text-red-500 text-center flex items-center justify-center gap-1 hover:text-red-700 transition-colors">
                           <Trash2 size={12}/> Hapus Data
                       </button>
                   )}

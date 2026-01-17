@@ -230,10 +230,11 @@ const App: React.FC = () => {
     setExams([newExam, ...exams]);
     const student = students.find(s => s.id === newExam.studentId);
     
-    // PAYLOAD MODIFIED: Sending "ID | Name" to studentId column so it appears in Sheets
+    // PAYLOAD MODIFIED: Sending "StudentName" as extra field
     const payload = {
         ...newExam,
-        studentId: student ? `${student.id} | ${student.name}` : newExam.studentId,
+        studentId: student ? student.id : newExam.studentId,
+        studentName: student ? student.name : '-',
         class: student?.class || '-'
     };
     api.send('addExam', payload);

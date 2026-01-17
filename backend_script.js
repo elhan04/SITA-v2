@@ -16,8 +16,8 @@ function setup() {
   // 4. Attendance (Added 'class')
   createSheetIfNeeded(doc, 'Attendance', ['id', 'userId', 'date', 'session', 'status', 'approvalStatus', 'type', 'class']);
   
-  // 5. Exams (Added 'class')
-  createSheetIfNeeded(doc, 'Exams', ['id', 'studentId', 'date', 'category', 'score', 'examiner', 'status', 'notes', 'juz', 'class']);
+  // 5. Exams (Added 'StudentName')
+  createSheetIfNeeded(doc, 'Exams', ['id', 'studentId', 'StudentName', 'date', 'category', 'score', 'examiner', 'status', 'notes', 'juz', 'class']);
   
   // Tambah Dummy Data jika kosong
   var userSheet = doc.getSheetByName('Users');
@@ -100,7 +100,9 @@ function doPost(e) {
       doc.getSheetByName('Attendance').appendRow([data.id, data.userId, data.date, data.session, data.status, data.approvalStatus, data.type, data.class || '']);
     } else if (action == 'addExam') {
       var juzInfo = (data.details && data.details.juz) ? data.details.juz : (data.juz || '-');
-      doc.getSheetByName('Exams').appendRow([data.id, data.studentId, data.date, data.category, data.score, data.examiner, data.status, data.notes, juzInfo, data.class || '']);
+      // Added studentName to parameters sent to appendRow
+      var studentName = data.studentName || '-';
+      doc.getSheetByName('Exams').appendRow([data.id, data.studentId, studentName, data.date, data.category, data.score, data.examiner, data.status, data.notes, juzInfo, data.class || '']);
     } else if (action == 'deleteData') {
        var sheet = doc.getSheetByName(data.sheetName);
        var values = sheet.getDataRange().getValues();

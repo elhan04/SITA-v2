@@ -7,10 +7,10 @@ import { User, Student, TahfidzRecord, Attendance, Exam, Grade } from './types';
 export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYHYhE61kBhKzowLu7Sg2ESx3zO9YJrRZiRhyGnxrMhDEuJqrd3aZYhRLQzmNnknbP/exec"; 
 
 // ---------------------------------------------------------------------------
-// 2. SETUP LOGO (LOGIN & DASHBOARD)
+// 2. SETUP LOGO (GOOGLE DRIVE DIRECT LINK)
 // ---------------------------------------------------------------------------
-// Garis miring "/" berarti mencari di folder public secara otomatis
-export const LOGO_URL = "/logo.png"; 
+// Ganti ID di bawah ini dengan ID file Google Drive Anda
+export const LOGO_URL = "https://lh3.googleusercontent.com/u/0/d/1TVfDQ2RysRmOgfIr0hUL9H1l7Rth_AsK"; 
 
 // WhatsApp Number for Admin
 export const ADMIN_PHONE = "6281234567890"; 

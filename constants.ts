@@ -9,9 +9,8 @@ export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYHYh
 // ---------------------------------------------------------------------------
 // 2. SETUP LOGO (LOGIN & DASHBOARD)
 // ---------------------------------------------------------------------------
-// Ganti link di bawah ini dengan link logo sekolah/instansi Anda.
-// Contoh menggunakan logo default yang stabil:
-export const LOGO_URL = "https://drive.google.com/uc?export=view&id=file/d/1TVfDQ2RysRmOgfIr0hUL9H1l7Rth_AsK"; 
+// Garis miring "/" berarti mencari di folder public secara otomatis
+export const LOGO_URL = "/logo.png"; 
 
 // WhatsApp Number for Admin
 export const ADMIN_PHONE = "6281234567890"; 

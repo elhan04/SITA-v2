@@ -9,17 +9,9 @@ export const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYHYh
 // ---------------------------------------------------------------------------
 // 2. SETUP LOGO (LOGIN & DASHBOARD)
 // ---------------------------------------------------------------------------
-// CARA MENGGUNAKAN GOOGLE DRIVE:
-// 1. Pastikan File di Drive aksesnya "Anyone with the link" (Siapa saja yang memiliki link).
-// 2. Gunakan format: https://drive.google.com/uc?export=view&id=ID_FILE_ANDA
-// ---------------------------------------------------------------------------
-
-// Gunakan logo default ini dulu agar pasti muncul:
-export const LOGO_URL = "https://cdn-icons-png.flaticon.com/512/3063/3063206.png"; 
-
-// Jika ingin pakai Google Drive Anda (Pastikan permission publik):
-// export const LOGO_URL = "https://drive.google.com/uc?export=view&id=1TVfDQ2RysRmOgfIr0hUL9H1l7Rth_AsK";
-
+// Ganti link di bawah ini dengan link logo sekolah/instansi Anda.
+// Contoh menggunakan logo default yang stabil:
+export const LOGO_URL = "https://drive.google.com/uc?export=view&id=file/d/1TVfDQ2RysRmOgfIr0hUL9H1l7Rth_AsK"; 
 
 // WhatsApp Number for Admin
 export const ADMIN_PHONE = "6281234567890"; 

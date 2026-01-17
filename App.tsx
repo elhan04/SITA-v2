@@ -11,7 +11,7 @@ import AdminPanel from './components/AdminPanel';
 import ReportsView from './components/ReportsView';
 import ProfileSettings from './components/ProfileSettings';
 import TutorialGuide from './components/TutorialGuide';
-import { User as UserIcon, Lock, AlertCircle, ArrowRight, CheckCircle2, XCircle, Loader2, WifiOff, Database } from 'lucide-react';
+import { User as UserIcon, Lock, AlertCircle, ArrowRight, CheckCircle2, XCircle, Loader2, WifiOff } from 'lucide-react';
 import { api } from './api';
 
 const LoginScreen = ({ onLogin, users, students, isLoadingData, connectionError }: { onLogin: (user: User) => void, users: User[], students: Student[], isLoadingData: boolean, connectionError: string | null }) => {
@@ -27,8 +27,8 @@ const LoginScreen = ({ onLogin, users, students, isLoadingData, connectionError 
       onLogin(user);
       return;
     } 
-    const student = students.find(s => s.username === username && s.password === password);
-    if (student) {
+    const student = students.find(s => s.username === username || s.nis === username);
+    if (student && student.password === password) {
         const studentUser: User = {
             id: student.id,
             name: student.name,
@@ -51,10 +51,7 @@ const LoginScreen = ({ onLogin, users, students, isLoadingData, connectionError 
                 src={LOGO_URL} 
                 alt="Logo" 
                 className="w-full h-full object-contain" 
-                onError={(e) => { 
-                    // Fallback to a safe icon if logo fails
-                    (e.target as HTMLImageElement).src = 'https://cdn-icons-png.flaticon.com/512/3063/3063206.png'; 
-                }} 
+                onError={(e) => { (e.target as HTMLImageElement).src = 'https://cdn-icons-png.flaticon.com/512/3063/3063206.png'; }} 
              />
           </div>
           <h1 className="text-2xl font-bold text-gray-800">Darul Abror IBS</h1>
@@ -65,7 +62,9 @@ const LoginScreen = ({ onLogin, users, students, isLoadingData, connectionError 
                 <WifiOff className="text-orange-500 shrink-0 mt-0.5" size={20} />
                 <div>
                     <h3 className="font-bold text-orange-700 text-sm">Mode Offline</h3>
-                    <p className="text-xs text-orange-600 mt-1 leading-relaxed">{connectionError === 'no_url' ? "Aplikasi berjalan di penyimpanan lokal." : "Gagal sinkron data cloud."}</p>
+                    <p className="text-xs text-orange-600 mt-1 leading-relaxed">
+                      {connectionError === 'no_url' ? "Database belum dikonfigurasi." : "Gagal sinkron data cloud."}
+                    </p>
                 </div>
             </div>
         )}
@@ -86,7 +85,7 @@ const LoginScreen = ({ onLogin, users, students, isLoadingData, connectionError 
             </div>
             {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm flex items-center gap-2"><AlertCircle size={16} />{error}</div>}
             <button type="submit" disabled={isLoadingData && !users.length} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-70">
-                {isLoadingData ? <><Loader2 size={20} className="animate-spin" /> Memuat...</> : <>Masuk Sistem <ArrowRight size={20} /></>}
+                {isLoadingData && !users.length ? <><Loader2 size={20} className="animate-spin" /> Memuat...</> : <>Masuk Sistem <ArrowRight size={20} /></>}
             </button>
         </form>
         <div className="mt-8 text-center border-t border-gray-100 pt-6">
@@ -95,20 +94,6 @@ const LoginScreen = ({ onLogin, users, students, isLoadingData, connectionError 
       </div>
     </div>
   );
-};
-
-const ActionResult = ({ action, teacherName }: { action: string, teacherName: string }) => {
-    const isApproved = action === 'approve';
-    return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-100 text-center">
-                 <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${isApproved ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}><CheckCircle2 size={40} /></div>
-                 <h2 className="text-xl font-bold text-gray-800 mb-2">{isApproved ? 'Izin Disetujui' : 'Izin Ditolak'}</h2>
-                 <p className="text-gray-500 mb-6">Pengajuan izin atas nama <strong>{teacherName}</strong> telah berhasil {isApproved ? 'disetujui' : 'ditolak'}.</p>
-                 <button onClick={() => window.location.href = window.location.pathname} className="w-full bg-gray-800 text-white py-3 rounded-xl font-medium">Kembali</button>
-            </div>
-        </div>
-    );
 };
 
 const useStickyState = <T,>(defaultValue: T, key: string): [T, React.Dispatch<React.SetStateAction<T>>] => {
@@ -142,12 +127,9 @@ const App: React.FC = () => {
 
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [urlAction, setUrlAction] = useState<{ type: string, name: string } | null>(null);
 
-  // Helper to extract clean ID if Sheet has "ID | Name" format
-  const cleanId = (id: string) => {
-      if (!id) return '';
-      // Split by " | " and take the first part
+  const cleanId = (id: any) => {
+      if (id === null || id === undefined) return '';
       return id.toString().split(' | ')[0].trim();
   };
 
@@ -155,118 +137,101 @@ const App: React.FC = () => {
      const fetchData = async () => {
         if (!GOOGLE_SCRIPT_URL) { setConnectionError('no_url'); return; }
         setIsLoadingData(true);
-        const data = await api.load();
-        if (data) {
-           if(data.users?.length) setUsers(data.users);
-           if(data.students) setStudents(data.students);
-           
-           // Clean IDs when loading records from Sheet (in case they are stored as "ID | Name")
-           if(data.records) {
-               const cleanedRecords = data.records.map((r: any) => ({
-                   ...r,
-                   studentId: cleanId(r.studentId)
-               }));
-               setRecords(cleanedRecords);
-           }
-           
-           if(data.attendance) {
-               const cleanedAttendance = data.attendance.map((a: any) => ({
-                   ...a,
-                   userId: cleanId(a.userId)
-               }));
-               setAttendance(cleanedAttendance);
-           }
+        try {
+            const data = await api.load();
+            if (data) {
+               if(data.users?.length) setUsers(data.users);
+               if(data.students?.length) setStudents(data.students);
+               
+               if(data.records) {
+                   const cleanedRecords = data.records.map((r: any) => ({ ...r, studentId: cleanId(r.studentId) }));
+                   setRecords(cleanedRecords);
+               }
+               
+               if(data.attendance) {
+                   const cleanedAttendance = data.attendance.map((a: any) => ({ ...a, userId: cleanId(a.userId) }));
+                   setAttendance(cleanedAttendance);
+               }
 
-           if(data.exams) {
-               const cleanedExams = data.exams.map((e: any) => ({
-                   ...e,
-                   studentId: cleanId(e.studentId)
-               }));
-               setExams(cleanedExams);
-           }
-        } else setConnectionError('fetch_failed');
-        setIsLoadingData(false);
+               if(data.exams) {
+                   const cleanedExams = data.exams.map((e: any) => ({ ...e, studentId: cleanId(e.studentId) }));
+                   setExams(cleanedExams);
+               }
+               setConnectionError(null);
+            } else setConnectionError('fetch_failed');
+        } catch (e) {
+            setConnectionError('fetch_failed');
+        } finally {
+            setIsLoadingData(false);
+        }
      };
      fetchData();
-  }, []);
+  }, [setUsers, setStudents, setRecords, setAttendance, setExams]);
 
   const handleAddRecord = (newRecord: TahfidzRecord) => {
-    setRecords([newRecord, ...records]);
+    setRecords(prev => [newRecord, ...prev]);
     const student = students.find(s => s.id === newRecord.studentId);
-    // STORE "ID | NAME" IN SHEET BUT KEEP ID IN APP
-    const payload = { 
+    api.send('addRecord', { 
         ...newRecord, 
         studentId: student ? `${student.id} | ${student.name}` : newRecord.studentId,
         class: student?.class || '-'
-    };
-    api.send('addRecord', payload);
+    });
   };
 
   const handleDeleteRecord = (id: string) => {
     if (confirm('Hapus data ini?')) {
-      setRecords(records.filter(r => r.id !== id));
+      setRecords(prev => prev.filter(r => r.id !== id));
       api.send('deleteData', { id, sheetName: 'Records' });
     }
   };
 
   const handleMarkAttendance = (newAtt: Attendance) => {
-    const exists = attendance.findIndex(a => a.userId === newAtt.userId && a.date === newAtt.date && a.type === newAtt.type && a.session === newAtt.session);
-    if (exists >= 0) {
-      const updated = [...attendance];
-      updated[exists] = newAtt;
-      setAttendance(updated);
-    } else setAttendance([...attendance, newAtt]);
+    setAttendance(prev => {
+        const exists = prev.findIndex(a => a.userId === newAtt.userId && a.date === newAtt.date && a.type === newAtt.type && a.session === newAtt.session);
+        if (exists >= 0) {
+          const updated = [...prev];
+          updated[exists] = newAtt;
+          return updated;
+        }
+        return [...prev, newAtt];
+    });
     
     const target = newAtt.type === 'student' ? students.find(s => s.id === newAtt.userId) : users.find(u => u.id === newAtt.userId);
-    const payload = {
+    api.send('markAttendance', {
         ...newAtt,
         userId: target ? `${target.id} | ${target.name}` : newAtt.userId,
         class: (newAtt.type === 'student' ? (target as Student)?.class : 'GURU') || '-'
-    };
-    api.send('markAttendance', payload);
+    });
   };
 
   const handleAddExam = (newExam: Exam) => {
-    setExams([newExam, ...exams]);
+    setExams(prev => [newExam, ...prev]);
     const student = students.find(s => s.id === newExam.studentId);
-    
-    // PAYLOAD MODIFIED: Sending "StudentName" as extra field
-    const payload = {
+    api.send('addExam', {
         ...newExam,
         studentId: student ? student.id : newExam.studentId,
         studentName: student ? student.name : '-',
         class: student?.class || '-'
-    };
-    api.send('addExam', payload);
-  };
-
-  const handleBulkAddUsers = (newUsers: User[]) => {
-      setUsers(prev => [...prev, ...newUsers]);
-      newUsers.forEach(u => api.send('addUser', u));
-  };
-
-  const handleBulkAddStudents = (newStudents: Student[]) => {
-      setStudents(prev => [...prev, ...newStudents]);
-      newStudents.forEach(s => api.send('addStudent', s));
+    });
   };
 
   const handleDeleteUser = (id: string) => {
     if(confirm("Hapus user ini?")) {
-        setUsers(users.filter(u => u.id !== id));
+        setUsers(prev => prev.filter(u => u.id !== id));
         api.send('deleteData', { id, sheetName: 'Users' });
     }
   };
 
   const handleDeleteStudent = (id: string) => {
     if(confirm("Hapus santri ini?")) {
-        setStudents(students.filter(s => s.id !== id));
+        setStudents(prev => prev.filter(s => s.id !== id));
         api.send('deleteData', { id, sheetName: 'Students' });
     }
   };
 
   const handleDeleteExam = (id: string) => {
     if(confirm("Hapus data ujian?")) {
-        setExams(exams.filter(e => e.id !== id));
+        setExams(prev => prev.filter(e => e.id !== id));
         api.send('deleteData', { id, sheetName: 'Exams' });
     }
   };
@@ -275,7 +240,7 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'dashboard': return <Dashboard user={user!} students={students} records={records} exams={exams} connectionError={connectionError} onNavigate={setActiveTab} />;
       case 'hafalan': return <TahfidzLog user={user!} students={students} records={records} onAddRecord={handleAddRecord} onDeleteRecord={handleDeleteRecord} />;
-      case 'master_data': return <AdminPanel users={users} students={students} onAddUser={(u) => { setUsers([...users, u]); api.send('addUser', u); }} onDeleteUser={handleDeleteUser} onAddStudent={(s) => { setStudents([...students, s]); api.send('addStudent', s); }} onDeleteStudent={handleDeleteStudent} onBulkAddStudents={handleBulkAddStudents} onBulkAddUsers={handleBulkAddUsers} />;
+      case 'master_data': return <AdminPanel users={users} students={students} onAddUser={(u) => { setUsers(prev => [...prev, u]); api.send('addUser', u); }} onDeleteUser={handleDeleteUser} onAddStudent={(s) => { setStudents(prev => [...prev, s]); api.send('addStudent', s); }} onDeleteStudent={handleDeleteStudent} onBulkAddStudents={(s) => { setStudents(prev => [...prev, ...s]); s.forEach(item => api.send('addStudent', item)); }} onBulkAddUsers={(u) => { setUsers(prev => [...prev, ...u]); u.forEach(item => api.send('addUser', item)); }} />;
       case 'reports': return <ReportsView user={user!} students={students} records={records} users={users} attendance={attendance} />;
       case 'attendance_student': return <AttendanceView user={user!} students={students} users={users} attendance={attendance} onMarkAttendance={handleMarkAttendance} type="student" />;
       case 'attendance_teacher': case 'attendance_self': return <AttendanceView user={user!} students={students} users={users} attendance={attendance} onMarkAttendance={handleMarkAttendance} type="teacher" />;
@@ -286,7 +251,6 @@ const App: React.FC = () => {
     }
   };
 
-  if (urlAction) return <ActionResult action={urlAction.type} teacherName={urlAction.name} />;
   if (!user) return <LoginScreen onLogin={setUser} users={users} students={students} isLoadingData={isLoadingData} connectionError={connectionError} />;
 
   return <Layout user={user} onLogout={() => setUser(null)} activeTab={activeTab} onTabChange={setActiveTab}>{renderContent()}</Layout>;

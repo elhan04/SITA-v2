@@ -10,13 +10,13 @@ function setup() {
   var studentHeaders = ['id', 'name', 'nis', 'class', 'halaqah', 'teacherId', 'totalJuz', 'username', 'password'];
   createSheetIfNeeded(doc, 'Students', studentHeaders);
   
-  // 3. Records (Added 'class')
+  // 3. Records (Tambahkan kolom class untuk kemudahan filter di spreadsheet)
   createSheetIfNeeded(doc, 'Records', ['id', 'studentId', 'date', 'type', 'surah', 'ayahStart', 'ayahEnd', 'grade', 'notes', 'class']);
   
-  // 4. Attendance (Added 'class')
+  // 4. Attendance
   createSheetIfNeeded(doc, 'Attendance', ['id', 'userId', 'date', 'session', 'status', 'approvalStatus', 'type', 'class']);
   
-  // 5. Exams (Added 'StudentName')
+  // 5. Exams (Ditambahkan StudentName dan class)
   createSheetIfNeeded(doc, 'Exams', ['id', 'studentId', 'StudentName', 'date', 'category', 'score', 'examiner', 'status', 'notes', 'juz', 'class']);
   
   // Tambah Dummy Data jika kosong
@@ -35,15 +35,6 @@ function createSheetIfNeeded(doc, sheetName, headers) {
     headerRange.setFontWeight("bold");
     headerRange.setBackground("#dcfce7");
     sheet.setFrozenRows(1);
-  } else {
-    var currentCols = sheet.getLastColumn();
-    if (currentCols < headers.length) {
-       for (var i = currentCols; i < headers.length; i++) {
-          sheet.getRange(1, i + 1).setValue(headers[i]);
-          sheet.getRange(1, i + 1).setFontWeight("bold");
-          sheet.getRange(1, i + 1).setBackground("#dcfce7");
-       }
-    }
   }
   return sheet;
 }
@@ -65,6 +56,7 @@ function doGet(e) {
 
 function getSheetData(doc, sheetName) {
   var sheet = doc.getSheetByName(sheetName);
+  if (!sheet) return [];
   var rows = sheet.getDataRange().getValues();
   if (rows.length <= 1) return [];
   var headers = rows[0];
@@ -83,7 +75,7 @@ function getSheetData(doc, sheetName) {
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
-  try { lock.tryLock(50000); } catch (e) { return ContentService.createTextOutput(JSON.stringify({result: 'error'})).setMimeType(ContentService.MimeType.JSON); }
+  try { lock.tryLock(30000); } catch (e) { return ContentService.createTextOutput(JSON.stringify({result: 'error', message: 'Locked'})).setMimeType(ContentService.MimeType.JSON); }
   try {
     var doc = SpreadsheetApp.getActiveSpreadsheet();
     var jsonData = JSON.parse(e.postData.contents);
@@ -99,15 +91,15 @@ function doPost(e) {
     } else if (action == 'markAttendance') {
       doc.getSheetByName('Attendance').appendRow([data.id, data.userId, data.date, data.session, data.status, data.approvalStatus, data.type, data.class || '']);
     } else if (action == 'addExam') {
-      var juzInfo = (data.details && data.details.juz) ? data.details.juz : (data.juz || '-');
-      // Added studentName to parameters sent to appendRow
-      var studentName = data.studentName || '-';
-      doc.getSheetByName('Exams').appendRow([data.id, data.studentId, studentName, data.date, data.category, data.score, data.examiner, data.status, data.notes, juzInfo, data.class || '']);
+      var juzInfo = data.juz || (data.details && data.details.juz) || '-';
+      doc.getSheetByName('Exams').appendRow([data.id, data.studentId, data.studentName || '-', data.date, data.category, data.score, data.examiner, data.status, data.notes, juzInfo, data.class || '']);
     } else if (action == 'deleteData') {
        var sheet = doc.getSheetByName(data.sheetName);
-       var values = sheet.getDataRange().getValues();
-       for (var i = 1; i < values.length; i++) {
-         if (values[i][0] == data.id) { sheet.deleteRow(i + 1); break; }
+       if (sheet) {
+         var values = sheet.getDataRange().getValues();
+         for (var i = 1; i < values.length; i++) {
+           if (values[i][0] == data.id) { sheet.deleteRow(i + 1); break; }
+         }
        }
     }
     return ContentService.createTextOutput(JSON.stringify({result: 'success'})).setMimeType(ContentService.MimeType.JSON);
